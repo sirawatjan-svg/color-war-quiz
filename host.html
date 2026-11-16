@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สงครามสี — จอครู</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body { overflow: hidden; height: 100dvh; background-image: var(--scan); }
+  .topbar { height: 64px; display: flex; align-items: center; gap: 18px; padding: 0 22px; border-bottom: 1px solid var(--line); background: rgba(10,10,10,.85); backdrop-filter: blur(8px); position: relative; z-index: 5; }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+  .brand .mark { width: 30px; height: 30px; border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; }
+  .brand .mark i { display: block; }
+  .brand .name { font: 800 1.15rem/1 var(--display); }
+  .topbar .step { font: .68rem/1 var(--pixel); letter-spacing: .2em; color: var(--muted); text-transform: uppercase; }
+  .page { height: calc(100dvh - 64px); overflow: auto; }
+
+  /* ---------- ตั้งค่า ---------- */
+  .setup { max-width: 920px; margin: 0 auto; padding: 56px 24px 80px; }
+  .setup h1 { font-size: clamp(2.6rem, 6vw, 4.6rem); text-align: center; }
+  .setup .sub { text-align: center; color: var(--muted); margin: 14px 0 44px; }
+  .opt { display: grid; grid-template-columns: 220px 1fr; gap: 18px; padding: 22px 0; border-top: 1px solid var(--line); align-items: center; }
+  .opt:last-of-type { border-bottom: 1px solid var(--line); }
+  .opt .k .label { display: block; margin-bottom: 6px; }
+  .opt .k .th { font: 600 1.05rem/1.3 var(--display); }
+  .teams-preview { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  .tp { width: 108px; text-align: center; transition: opacity .2s, transform .2s; }
+  .tp canvas { width: 108px; height: 108px; border-radius: 20px; background: #0e0f12; border: 1px solid var(--line); }
+  .tp .n { font: .62rem/1 var(--pixel); letter-spacing: .16em; margin-top: 8px; color: var(--muted); }
+  .tp.off { opacity: .18; transform: scale(.94); }
+  .cta-row { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 44px; }
+  .note { font-size: .82rem; color: var(--dim); text-align: center; }
+
+  /* ---------- ล็อบบี้ ---------- */
+  .lobby { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 40px; padding: 40px; height: 100%; }
+  .qr-card { background: #fff; color: #0a0a0a; border-radius: 28px; padding: 26px; text-align: center; }
+  .qr-card .label { color: #5f6368; }
+  #qr-box { display: flex; justify-content: center; margin: 16px 0 12px; }
+  #qr-box img, #qr-box canvas { border-radius: 8px; }
+  .qr-card .code { font: 700 3.1rem/1 var(--pixel); letter-spacing: .12em; }
+  .qr-card .url { font-size: .76rem; color: #5f6368; word-break: break-all; margin-top: 10px; }
+  .side-actions { display: grid; gap: 10px; margin-top: 18px; }
+  .roster-head { display: flex; align-items: flex-end; gap: 18px; margin-bottom: 26px; }
+  .roster-head .count { font: 700 clamp(4rem, 9vw, 8rem)/.85 var(--pixel); }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; overflow: auto; max-height: calc(100% - 160px); }
+  .chip { padding: 10px 18px; border-radius: 999px; background: #141518; border: 1px solid var(--line-strong); font: 600 1.08rem/1 var(--display); }
+  .chip.done { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .chip small { font: .62rem/1 var(--pixel); color: var(--muted); margin-left: 6px; }
+
+  /* ---------- แบ่งทีม ---------- */
+  .teams { display: grid; gap: 16px; padding: 22px; height: 100%; grid-auto-flow: column; grid-auto-columns: 1fr; }
+  .team-col { border-radius: 26px; background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; overflow: hidden; }
+  .team-col .head { position: relative; padding: 18px; cursor: pointer; display: grid; grid-template-columns: 92px 1fr; gap: 14px; align-items: center; border-bottom: 1px solid var(--line); }
+  .team-col .head::before { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 140% at 0% 0%, var(--tc), transparent 60%); opacity: .28; }
+  .team-col .head canvas { width: 92px; height: 92px; position: relative; }
+  .team-col .head .info { position: relative; }
+  .team-col .head .en { font: 700 .74rem/1 var(--pixel); letter-spacing: .2em; color: var(--tc); }
+  .team-col .head .th { font: 800 1.8rem/1.1 var(--display); margin: 4px 0; }
+  .team-col .head .d { font-size: .82rem; color: var(--muted); line-height: 1.4; }
+  .team-col .head .cnt { position: absolute; top: 14px; right: 16px; }
+  .team-col .list { padding: 12px; display: flex; flex-direction: column; gap: 6px; overflow: auto; flex: 1; }
+  .pl { background: #0e0f12; border-radius: 14px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent; font: 600 1rem/1.2 var(--display); transition: border-color .15s; }
+  .pl:hover { border-color: var(--line-strong); }
+  .pl.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .pl small { font: .62rem/1 var(--pixel); color: var(--muted); letter-spacing: .1em; }
+
+  /* ---------- เล่น ---------- */
+  .play { position: relative; height: 100dvh; display: flex; flex-direction: column; background: #050507; }
+  .hud { display: grid; grid-template-columns: 1fr minmax(320px, 56%) 1fr; align-items: center; gap: 18px; padding: 10px 20px 8px; position: relative; z-index: 6; height: 138px; flex-shrink: 0; }
+  .hud .left { display: flex; align-items: center; gap: 12px; }
+  .hud .right { display: flex; justify-content: flex-end; gap: 8px; }
+  .hud .mid { display: grid; gap: 8px; justify-items: center; }
+  .timer { font: 700 clamp(2.2rem, 4vw, 3.4rem)/1 var(--pixel); letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+  .timer.hot { color: var(--bad); animation: pulse .5s infinite; }
+  .tug { display: flex; width: 100%; height: 14px; border-radius: 999px; overflow: hidden; background: #15161a; box-shadow: 0 0 0 1px var(--line); }
+  .tug i { display: block; height: 100%; transition: width .5s cubic-bezier(.2,.8,.2,1); position: relative; }
+  .tug i::after { content: ''; position: absolute; inset: 0 0 50% 0; background: rgba(255,255,255,.25); }
+  .tchips { display: flex; gap: 8px; flex-wrap: nowrap; justify-content: center; }
+  .tchip { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 999px; background: #121316; border: 1px solid var(--line); transition: border-color .2s, box-shadow .2s; white-space: nowrap; }
+  .tchip b { min-width: 3.2em; text-align: right; }
+  @media (max-width: 1500px) { .tchip span { display: none; } }
+  .tchip canvas { width: 26px; height: 26px; }
+  .tchip b { font: 700 .95rem/1 var(--pixel); font-variant-numeric: tabular-nums; }
+  .tchip span { font: .58rem/1 var(--pixel); color: var(--muted); letter-spacing: .12em; }
+  .tchip.lead { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .tchip.lead::after { content: 'LEAD'; font: .55rem/1 var(--pixel); letter-spacing: .14em; color: #000; background: var(--accent); border-radius: 999px; padding: 4px 6px; }
+  .board-wrap { flex: 1; position: relative; min-height: 0; margin: 0 14px 14px; }
+  #stage { position: absolute; inset: 0; }
+  #stage canvas { position: absolute; left: 0; top: 0; }
+  .feed { position: absolute; left: 10px; bottom: 10px; display: flex; flex-direction: column-reverse; gap: 5px; pointer-events: none; z-index: 5; max-width: 300px; opacity: .85; }
+  .feed div { padding: 5px 12px; border-radius: 999px; font: 500 .8rem/1.2 var(--sans); animation: fadein .3s; background: rgba(0,0,0,.7); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.08); }
+  .status-badges { position: absolute; right: 14px; top: 12px; display: flex; gap: 6px; z-index: 5; flex-wrap: wrap; justify-content: flex-end; }
+  .sb { padding: 7px 12px; border-radius: 999px; background: rgba(0,0,0,.65); font: .62rem/1 var(--pixel); letter-spacing: .12em; border: 1px solid; text-transform: uppercase; }
+  .ctl { position: absolute; right: 14px; bottom: 14px; display: flex; gap: 8px; z-index: 5; }
+  .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 8; pointer-events: none; }
+  .overlay.dark { background: rgba(0,0,0,.6); backdrop-filter: blur(3px); }
+  .overlay .big { font: 700 min(34vh, 24vw)/1 var(--pixel); text-shadow: 0 0 60px rgba(255,255,255,.35); }
+  .overlay .cap { font: .9rem/1 var(--pixel); letter-spacing: .4em; color: var(--muted); margin-top: 10px; }
+  #final10 .big { color: var(--bad); text-shadow: 0 0 80px rgba(255,80,110,.6); opacity: .9; }
+  .lead-banner { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 7; padding: 10px 20px; border-radius: 999px; background: #fff; color: #000; font: 800 1.1rem/1 var(--display); box-shadow: 0 10px 40px rgba(0,0,0,.5); animation: leadIn 2.2s cubic-bezier(.2,.9,.2,1) both; pointer-events: none; white-space: nowrap; }
+  .lead-banner i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; vertical-align: -1px; }
+  @keyframes leadIn { 0% { opacity: 0; transform: translate(-50%, -20px) scale(.8); } 12% { opacity: 1; transform: translate(-50%, 0) scale(1.06); } 20% { transform: translate(-50%, 0) scale(1); } 85% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -8px); } }
+  .vignette { position: absolute; inset: 0; pointer-events: none; z-index: 2; box-shadow: inset 0 0 160px 40px rgba(255,40,80,.55); opacity: 0; transition: opacity .3s; }
+  .vignette.on { animation: vig 1s ease-in-out infinite; }
+  @keyframes vig { 0%,100% { opacity: .25; } 50% { opacity: .8; } }
+
+  /* ---------- สรุป ---------- */
+  .end { height: 100dvh; overflow: auto; position: relative; }
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+  .winner { text-align: center; padding: 64px 20px 10px; position: relative; }
+  .winner .glowbg { position: absolute; inset: 0; background: radial-gradient(50% 70% at 50% 40%, var(--wc, #fff), transparent 70%); opacity: .22; pointer-events: none; }
+  .winner canvas { width: 180px; height: 180px; margin: 0 auto 8px; position: relative; }
+  .winner .w1 { position: relative; }
+  .winner .w2 { position: relative; font-size: clamp(4rem, 12vw, 10rem); color: var(--wc); filter: drop-shadow(0 0 24px var(--wc)); }
+  .scores { display: flex; gap: 12px; justify-content: center; margin: 26px 0 50px; flex-wrap: wrap; padding: 0 20px; }
+  .sc { background: var(--surface); border-radius: 22px; padding: 16px 22px; min-width: 190px; text-align: center; border: 1px solid var(--line); position: relative; overflow: hidden; }
+  .sc::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--tc); }
+  .sc .label { color: var(--tc); }
+  .sc b { display: block; font: 700 2.2rem/1.1 var(--pixel); margin: 8px 0 4px; }
+  .sc.first { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .award-stage { max-width: 980px; margin: 0 auto; min-height: 250px; padding: 0 20px; display: grid; place-items: center; }
+  .award { width: 100%; display: grid; grid-template-columns: 200px 1fr; border-radius: 28px; overflow: hidden; border: 1px solid var(--line-strong); background: var(--surface); }
+  .award .art { position: relative; background: radial-gradient(circle at 50% 45%, var(--tc), transparent 70%), #0d0e11; display: grid; place-items: center; }
+  .award .art .em { font-size: 4.8rem; filter: drop-shadow(0 6px 20px rgba(0,0,0,.5)); }
+  .award .body { padding: 28px 30px; }
+  .award .an { display: flex; gap: 10px; align-items: center; }
+  .award .pn { font: 900 clamp(2.4rem, 5vw, 4rem)/1.05 var(--display); margin: 10px 0 6px; }
+  .award .ad { color: var(--muted); }
+  .award .av { margin-top: 12px; }
+  .award-count { text-align: center; margin: 18px 0; }
+  table.lb { width: calc(100% - 40px); max-width: 1080px; margin: 10px auto 30px; border-collapse: collapse; font-size: .95rem; }
+  table.lb th, table.lb td { padding: 11px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+  table.lb th { font: .62rem/1 var(--pixel); letter-spacing: .16em; color: var(--muted); text-transform: uppercase; }
+  table.lb td b { font-family: var(--display); }
+  table.lb tr:nth-child(2) td { background: rgba(215,243,106,.06); }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+  .end-actions { display: flex; gap: 10px; justify-content: center; margin: 30px 0 60px; flex-wrap: wrap; }
+  h2.sec { text-align: center; font-size: 2rem; margin-top: 30px; }
+</style>
+</head>
+<body>
+
+<!-- ===== ตั้งค่า ===== -->
+<div id="v-setup" class="view on">
+  <div class="topbar">
+    <a class="brand" href="index.html"><span class="mark"><i class="bg0" style="background:var(--c0)"></i><i style="background:var(--c1)"></i><i style="background:var(--c2)"></i><i style="background:var(--c3)"></i></span><span class="name">สงครามสี</span></a>
+    <span class="tag">TEACHER</span><span class="grow"></span>
+    <a class="btn btn-ghost btn-sm" href="bank.html">คลังคำถาม</a>
+  </div>
+  <div class="page">
+    <div class="setup">
+      <div class="center"><span class="label">STEP 01 — ROOM SETUP</span></div>
+      <h1 class="display sliced" style="margin-top:14px">ตั้งค่าห้องเกม</h1>
+      <p class="sub">เลือกชุดคำถามและรูปแบบการแข่ง แล้วเปิดห้องให้นักเรียนสแกนเข้า</p>
+
+      <div class="opt"><div class="k"><span class="label">Question set</span><span class="th">ชุดคำถาม</span></div>
+        <div><select id="s-set"></select><div class="muted" id="s-set-info" style="font-size:.85rem;margin-top:8px"></div></div></div>
+      <div class="opt"><div class="k"><span class="label">Teams</span><span class="th">จำนวนทีม</span></div>
+        <div><div class="seg" id="s-teams"><button data-v="2">2 ทีม</button><button data-v="3">3 ทีม</button><button data-v="4" class="on">4 ทีม</button></div>
+          <div class="teams-preview" id="tp"></div></div></div>
+      <div class="opt"><div class="k"><span class="label">Duration</span><span class="th">เวลาเล่น</span></div>
+        <div class="seg" id="s-dur"><button data-v="4">4 นาที</button><button data-v="6" class="on">6 นาที</button><button data-v="8">8 นาที</button><button data-v="10">10 นาที</button></div></div>
+      <div class="opt"><div class="k"><span class="label">Answer time</span><span class="th">เวลาตอบต่อข้อ</span></div>
+        <div class="seg" id="s-qt"><button data-v="15">15 วิ</button><button data-v="20" class="on">20 วิ</button><button data-v="30">30 วิ</button></div></div>
+      <div class="opt"><div class="k"><span class="label">Balance</span><span class="th">การแบ่งทีม</span></div>
+        <div class="seg" id="s-scr"><button data-v="1" class="on">คัดกรอง 3 ข้อ → แบ่งให้สูสี</button><button data-v="0">สุ่มทีม</button></div></div>
+
+      <div class="cta-row">
+        <button class="btn btn-primary btn-lg" id="btn-create">Open room</button>
+        <div class="note" id="s-mode"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ล็อบบี้ ===== -->
+<div id="v-lobby" class="view">
+  <div class="topbar"><span class="brand"><span class="mark"><i style="background:var(--c0)"></i><i style="background:var(--c1)"></i><i style="background:var(--c2)"></i><i style="background:var(--c3)"></i></span><span class="name">สงครามสี</span></span><span class="step">STEP 02 — LOBBY</span><span class="grow"></span><button class="btn btn-ghost btn-icon" id="btn-mute1" title="เสียง">🔊</button></div>
+  <div class="page">
+    <div class="lobby">
+      <div>
+        <div class="qr-card">
+          <span class="label">Scan to join</span>
+          <div id="qr-box"></div>
+          <div class="code" id="l-code">------</div>
+          <div class="url" id="l-url"></div>
+        </div>
+        <div class="side-actions">
+          <button class="btn btn-primary" id="btn-screen">Start screening</button>
+          <button class="btn btn-ghost btn-th" id="btn-skip-screen">ข้ามคัดกรอง → แบ่งทีมเลย</button>
+          <button class="btn btn-danger btn-sm btn-th" id="btn-close1">ปิดห้อง</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;min-height:0">
+        <div class="roster-head"><div class="count" id="l-count">0</div><div><span class="label">Players</span><div class="display" style="font-size:1.6rem;font-weight:800">คนในห้อง</div></div></div>
+        <div class="chips" id="l-chips"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== คัดกรอง ===== -->
+<div id="v-screen" class="view">
+  <div class="topbar"><span class="brand"><span class="name">สงครามสี</span></span><span class="step">STEP 03 — SCREENING</span><span class="grow"></span><div class="timer" id="sc-timer" style="font-size:2rem">75</div></div>
+  <div class="page">
+    <div class="lobby">
+      <div>
+        <div class="card" style="padding:28px">
+          <span class="label">Finished</span>
+          <div class="roster-head" style="margin:12px 0 18px"><div class="count" id="sc-done">0</div><div class="muted">จาก <span id="sc-total">0</span> คน</div></div>
+          <div class="bar"><i id="sc-bar" style="width:0;background:var(--accent)"></i></div>
+          <p class="muted" style="font-size:.88rem;margin:16px 0 0">นักเรียนตอบฟรี 3 ข้อ ผลใช้จัดทีมให้คนเก่ง/คนอ่อนคละกันสูสี — ไม่นับคะแนน</p>
+        </div>
+        <div class="side-actions"><button class="btn btn-primary" id="btn-teams">Make teams</button></div>
+      </div>
+      <div class="chips" id="sc-chips" style="max-height:100%"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== แบ่งทีม ===== -->
+<div id="v-teams" class="view">
+  <div class="topbar"><span class="brand"><span class="name">สงครามสี</span></span><span class="step">STEP 04 — TEAMS</span>
+    <span class="muted" style="font-size:.85rem" id="t-hint">คลิกชื่อ 2 คนเพื่อสลับทีม • คลิกชื่อแล้วคลิกหัวทีมเพื่อย้าย</span><span class="grow"></span>
+    <button class="btn btn-ghost btn-sm btn-th" id="btn-redraft">สุ่มใหม่</button><button class="btn btn-primary" id="btn-start">Start game</button></div>
+  <div class="page"><div class="teams" id="t-cols"></div></div>
+</div>
+
+<!-- ===== เล่น ===== -->
+<div id="v-play" class="view">
+  <div class="play">
+    <div class="hud">
+      <div class="left"><span class="brand"><span class="mark"><i style="background:var(--c0)"></i><i style="background:var(--c1)"></i><i style="background:var(--c2)"></i><i style="background:var(--c3)"></i></span><span class="name">สงครามสี</span></span><span class="tag" id="hud-room">ROOM</span></div>
+      <div class="mid"><div class="timer" id="hud-timer">6:00</div><div class="tug" id="tug"></div><div class="tchips" id="tchips"></div></div>
+      <div class="right"><button class="btn btn-ghost btn-icon" id="btn-mute2" title="เสียง">🔊</button><button class="btn btn-ghost btn-icon" id="btn-fs" title="เต็มจอ">⛶</button><button class="btn btn-ghost btn-sm btn-th" id="btn-endnow">จบเกม</button></div>
+    </div>
+    <div class="board-wrap" id="board-wrap">
+      <div id="stage"><canvas id="board"></canvas></div>
+      <div class="vignette" id="vignette"></div>
+      <div class="status-badges" id="sbadges"></div>
+      <div class="feed" id="feed"></div>
+      <div class="overlay dark" id="countdown" style="display:none"><div class="big sliced" id="cd-num">3</div><div class="cap">GET READY</div></div>
+      <div class="overlay" id="final10" style="display:none"><div class="big sliced" id="f10">10</div></div>
+      <div id="lead-slot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== สรุป ===== -->
+<div id="v-end" class="view">
+  <canvas id="confetti"></canvas>
+  <div class="end scan">
+    <div class="winner" id="winner"><div class="glowbg"></div><canvas id="e-portrait"></canvas><div class="w1 label" id="e-w1">AND THE WINNER IS</div><div class="w2 display sliced" id="e-w2">?</div></div>
+    <div class="scores" id="e-scores"></div>
+    <div class="award-stage" id="e-award"></div>
+    <div class="award-count"><span class="label" id="e-acount"></span></div>
+    <div class="center"><button class="btn btn-primary" id="btn-next-award">Next award</button></div>
+    <div id="e-board" style="display:none">
+      <h2 class="sec display">อันดับรายบุคคล</h2>
+      <table class="lb" id="e-table"></table>
+    </div>
+    <div class="end-actions"><button class="btn btn-primary btn-th" id="btn-rematch">เล่นอีกรอบ (ทีมเดิม)</button><button class="btn btn-ghost btn-th" id="btn-rematch-shuffle">เล่นอีกรอบ (แบ่งทีมใหม่)</button><button class="btn btn-danger btn-th" id="btn-close2">ปิดห้อง</button></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/net.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/sfx.js"></script>
+<script src="js/art.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/bank.js"></script>
+<script src="js/awards.js"></script>
+<script src="js/host.js"></script>
+</body>
+</html>
