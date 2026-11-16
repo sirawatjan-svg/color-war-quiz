@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a0a0a">
+<title>สงครามสี — Color War Quiz</title>
+<meta name="description" content="เกมตอบคำถามทั้งห้องเรียน 2–4 ทีม ตอบถูก 3 ข้อปล่อยนักรบลงกระดาน แย่งพื้นที่ ล็อกช่อง ใช้สกิลพิเศษ">
+<link rel="stylesheet" href="style.css">
+<style>
+  body { background-image: var(--scan); }
+  section { position: relative; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  .narrow { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+  .sec-gap { padding: 140px 0; }
+
+  /* ---------- 1. HERO ---------- */
+  .hero { height: 100vh; min-height: 620px; overflow: hidden; background: #050507; }
+  #hero-stage { position: absolute; inset: 0; }
+  #hero-stage canvas { position: absolute; left: 0; top: 0; }
+  .hero::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(60% 55% at 50% 52%, rgba(5,5,7,.72), rgba(5,5,7,.25) 70%, rgba(5,5,7,0)), linear-gradient(to bottom, rgba(5,5,7,.6), transparent 22%, transparent 70%, #0a0a0a); }
+  .hero .scan-overlay { z-index: 1; }
+  .hero-top { position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 22px 28px; }
+  .hero-top .back { display: flex; align-items: center; gap: 12px; text-decoration: none; font: 600 1rem/1 var(--display); }
+  .hero-top .back .chev { font-size: 1.4rem; line-height: 1; opacity: .85; }
+  .hero-top .prod { display: flex; align-items: center; gap: 10px; font: 700 1.3rem/1 var(--display); }
+  .hero-content { position: relative; z-index: 3; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 20px; }
+  .hero-content .label { color: #e8eaed; }
+  .wordmark { font-size: clamp(5rem, 19vw, 15rem); margin: 18px 0 6px; text-shadow: 0 10px 60px rgba(0,0,0,.6); }
+  .tagline { font: 500 clamp(1.15rem, 2.3vw, 1.75rem)/1.35 var(--display); margin-bottom: 34px; }
+  .scroll-hint { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); z-index: 3; }
+
+  /* ---------- 2. NAV ---------- */
+  .nav { position: sticky; top: 0; z-index: 50; background: rgba(10,10,10,.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+  .nav .in { height: 60px; display: flex; align-items: center; gap: 32px; }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; font: 800 1.08rem/1 var(--display); }
+  .mark { width: 26px; height: 26px; border-radius: 7px; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; flex-shrink: 0; }
+  .mark i { display: block; }
+  .nav a.lnk { text-decoration: none; color: var(--muted); font-size: .95rem; transition: color .15s; }
+  .nav a.lnk:hover, .nav a.lnk.on { color: #fff; }
+  .nav .links { display: flex; gap: 28px; flex: 1; }
+
+  /* ---------- 3. MANIFESTO ---------- */
+  .manifesto .narrow { max-width: 1200px; }
+  .manifesto h2 { font-size: clamp(2.2rem, 6.2vw, 6.2rem); }
+  .manifesto h2 span { white-space: nowrap; }
+  .manifesto p { max-width: 640px; margin: 34px auto 0; font-size: 1.1rem; color: #d5d7da; }
+
+  /* ---------- 4. MEDIA FRAME ---------- */
+  .media { max-width: 980px; margin: 0 auto; aspect-ratio: 16 / 9; border-radius: 32px; overflow: hidden; position: relative; border: 1px solid var(--line-strong); background: #050507; box-shadow: 0 40px 120px rgba(0,0,0,.6); }
+  #media-stage { position: absolute; inset: 0; }
+  #media-stage canvas { position: absolute; left: 0; top: 0; }
+  .media .badge-live { position: absolute; left: 18px; top: 18px; z-index: 6; }
+  .media .badge-live::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--bad); box-shadow: 0 0 10px var(--bad); animation: pulse 1s infinite; }
+
+  /* ---------- 5. CAPABILITY TABS ---------- */
+  .tabs { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 36px; }
+  .tabbtn { font: 700 .78rem/1 var(--pixel); letter-spacing: .2em; text-transform: uppercase; padding: 16px 40px; border-radius: 999px; background: #17181b; color: #4b4f55; border: 1px solid #222428; cursor: pointer; transition: all .2s; }
+  .tabbtn:hover { color: #9aa0a6; }
+  .tabbtn.on { background: transparent; color: var(--accent); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .tabtext { max-width: 760px; margin: 0 auto; min-height: 150px; }
+  .tabtext p { font-size: 1.05rem; color: #d5d7da; margin: 0 0 14px; }
+  .tabtext a { color: #fff; text-underline-offset: 4px; font-weight: 600; }
+  .tabtext .tp { animation: fadein .35s ease-out; }
+  .tabtext .kpis { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+
+  /* ---------- 6. CAROUSEL ---------- */
+  .carousel { max-width: 980px; margin: 0 auto; }
+  .car-frame { aspect-ratio: 16 / 9; border-radius: 28px; overflow: hidden; position: relative; border: 1px solid var(--line-strong); background: #0d0e11; }
+  .slide { position: absolute; inset: 0; opacity: 0; transition: opacity .55s steps(7); pointer-events: none; }
+  .slide.on { opacity: 1; pointer-events: auto; }
+  .car-foot { display: flex; align-items: center; margin-top: 14px; }
+  .car-foot .cap { font-size: .8rem; color: var(--muted); font-style: italic; flex: 1; }
+  .dots { display: flex; gap: 10px; flex: 1; justify-content: center; }
+  .dots button { width: 12px; height: 12px; border-radius: 50%; border: 0; background: #3c4043; cursor: pointer; padding: 0; transition: background .2s, transform .2s; }
+  .dots button.on { background: var(--accent); transform: scale(1.15); }
+  .car-foot .sp { flex: 1; }
+  /* หน้าจอจำลอง */
+  .mock { position: absolute; inset: 0; padding: 4.5%; display: grid; gap: 3%; font-size: clamp(8px, 1.15vw, 13px); }
+  .mock .mbar { display: flex; align-items: center; gap: 1em; padding: .8em 1.2em; border-radius: 999px; background: #16171a; border: 1px solid var(--line); }
+  .mock .mlabel { font: .8em/1 var(--pixel); letter-spacing: .2em; color: var(--muted); text-transform: uppercase; }
+  .mock-lobby { grid-template-columns: 34% 1fr; }
+  .mock-qr { background: #fff; color: #000; border-radius: 1.8em; display: grid; place-items: center; text-align: center; padding: 1.4em; }
+  .mock-qr .qrfake { width: 70%; aspect-ratio: 1; image-rendering: pixelated; }
+  .mock-qr .code { font: 700 2.4em/1 var(--pixel); letter-spacing: .1em; }
+  .mock .chips { display: flex; flex-wrap: wrap; gap: .7em; align-content: flex-start; }
+  .mock .chips span { padding: .7em 1.2em; border-radius: 999px; background: #141518; border: 1px solid var(--line-strong); font: 600 1.15em/1 var(--display); }
+  .mock .count { font: 700 6em/.9 var(--pixel); }
+  .mock-phones { grid-template-columns: 1fr 1fr 1fr; align-items: center; }
+  .phone { aspect-ratio: 9 / 18; height: 100%; max-height: 100%; margin: 0 auto; border-radius: 2.2em; border: 1px solid var(--line-strong); background: #0a0a0a; padding: 1.4em 1.1em; display: flex; flex-direction: column; gap: .8em; overflow: hidden; background-image: var(--scan); }
+  .phone .qtxt { font: 600 1.15em/1.4 var(--display); }
+  .phone .ch { padding: .8em; border-radius: 1em; background: #121316; border: 1px solid var(--line-strong); font-size: .95em; display: flex; gap: .6em; align-items: center; }
+  .phone .ch i { width: 1.8em; height: 1.8em; border-radius: .5em; background: #fff; color: #000; font: .8em/1.8em var(--pixel); text-align: center; font-style: normal; flex-shrink: 0; }
+  .phone .ch.ok { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); }
+  .phone .pips { display: flex; gap: .4em; } .phone .pips b { flex: 1; height: .6em; border-radius: 9px; background: var(--accent); } .phone .pips b.off { background: #1b1c20; }
+  .phone .rel { margin-top: auto; padding: 1em; text-align: center; border-radius: 999px; background: #fff; color: #000; font: 700 .9em/1 var(--pixel); letter-spacing: .14em; }
+  .phone canvas { width: 100%; aspect-ratio: 1; }
+  .mock-award { place-items: center; }
+  .mock-award .award { width: 86%; display: grid; grid-template-columns: 34% 1fr; border-radius: 2em; overflow: hidden; border: 1px solid var(--line-strong); background: var(--surface); }
+  .mock-award .art { background: radial-gradient(circle at 50% 50%, rgba(46,196,255,.6), transparent 70%), #0d0e11; display: grid; place-items: center; font-size: 6em; aspect-ratio: 1; }
+  .mock-award .body { padding: 2.2em; display: flex; flex-direction: column; justify-content: center; gap: .6em; }
+  .mock-award .pn { font: 900 3.6em/1 var(--display); color: var(--c2); }
+
+  /* ---------- 7. DISCOVER ---------- */
+  .gallery { display: grid; gap: 22px; margin-top: 64px; }
+  .grow-row { display: flex; gap: 22px; overflow-x: auto; scrollbar-width: none; padding: 4px 24px 8px; scroll-snap-type: x proximity; }
+  .grow-row::-webkit-scrollbar { display: none; }
+  .grow-row.offset { padding-left: calc(24px + 170px); }
+  .gcard { position: relative; flex: 0 0 auto; width: clamp(260px, 30vw, 380px); aspect-ratio: 4 / 5; border-radius: 26px; overflow: hidden; background: #111; scroll-snap-align: start; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+  .gcard:hover { transform: translateY(-6px); }
+  .gcard canvas { position: absolute; inset: 0; width: 100%; height: 100%; transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+  .gcard:hover canvas { transform: scale(1.06); }
+  .gcard .tag { position: absolute; left: 16px; top: 16px; }
+  .gcap { position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 16px 18px; border-radius: 18px; }
+  .gcap .meta { font: .58rem/1 var(--pixel); letter-spacing: .16em; color: var(--muted); text-transform: uppercase; }
+  .gcap .ttl { font: 700 1.15rem/1.15 var(--pixel); letter-spacing: .1em; text-transform: uppercase; margin: 8px 0 6px; }
+  .gcap .desc { font-size: .86rem; color: #d5d7da; line-height: 1.45; }
+  .gcap .handle { display: flex; align-items: center; gap: 8px; margin-top: 10px; font: .58rem/1 var(--pixel); letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+  .gcap .handle i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+
+  /* ---------- 8. ACCESS ---------- */
+  .legal { font-size: .88rem; color: var(--muted); max-width: 480px; margin: 22px auto 30px; line-height: 1.6; }
+  .pair { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* ---------- 9. FOOTER ---------- */
+  footer { border-top: 1px solid var(--line); padding: 26px 0 0; overflow: hidden; }
+  .foot-row { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .foot-row .lbl { font-size: .85rem; color: var(--muted); flex: 1; min-width: 200px; }
+  .foot-row a { color: var(--muted); text-decoration: none; font-size: .88rem; transition: color .15s; }
+  .foot-row a:hover { color: #fff; }
+  .giant { font: 700 12.9vw/1 var(--pixel); letter-spacing: -.02em; text-align: center; white-space: nowrap; margin: 40px 0 10px; color: #fff; }
+  .foot-bottom { display: flex; align-items: center; gap: 28px; padding: 24px 0 30px; flex-wrap: wrap; }
+  .foot-bottom .sp { flex: 1; }
+  .foot-bottom a { font: .62rem/1 var(--pixel); letter-spacing: .16em; color: var(--muted); text-decoration: none; text-transform: uppercase; }
+  .foot-bottom a:hover { color: #fff; }
+
+  @media (max-width: 760px) {
+    .sec-gap { padding: 96px 0; }
+    .nav .links { display: none; }
+    .hero-top { grid-template-columns: 1fr auto; padding: 16px; }
+    .hero-top .r { display: none; }
+    .grow-row.offset { padding-left: 90px; }
+    .mock-phones { grid-template-columns: 1fr 1fr; } .mock-phones > :nth-child(3) { display: none; }
+    .tabbtn { padding: 14px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 1. HERO — ภาพหลักเป็นเกมจริงที่เล่นเองอยู่เบื้องหลัง -->
+<section class="hero" id="top">
+  <div id="hero-stage"></div>
+  <div class="scan-overlay"></div>
+  <div class="hero-top">
+    <a class="back" href="#more"><span class="chev">‹</span><span class="mark"><i style="background:var(--c0)"></i><i style="background:var(--c1)"></i><i style="background:var(--c2)"></i><i style="background:var(--c3)"></i></span>เกมห้องเรียน</a>
+    <div class="prod">สงครามสี <span class="tag">BETA</span></div>
+    <div class="r"></div>
+  </div>
+  <div class="hero-content">
+    <span class="label">COLOR WAR · CLASSROOM QUIZ BATTLE</span>
+    <h1 class="display sliced wordmark">สงครามสี</h1>
+    <p class="tagline">ตอบถูก 3 ข้อ ปล่อยนักรบ ยึดกระดานทั้งห้อง</p>
+    <a class="btn btn-primary btn-lg" href="host.html">Press start</a>
+  </div>
+  <div class="scroll-hint label">SCROLL</div>
+</section>
+
+<!-- 2. NAV -->
+<nav class="nav">
+  <div class="wrap in">
+    <a class="logo" href="#top"><span class="mark"><i style="background:var(--c0)"></i><i style="background:var(--c1)"></i><i style="background:var(--c2)"></i><i style="background:var(--c3)"></i></span>สงครามสี</a>
+    <div class="links"><a class="lnk" href="#overview">ภาพรวม</a><a class="lnk" href="#capabilities">ความสามารถ</a><a class="lnk" href="#discover">ตัวละคร</a><a class="lnk" href="#access">เริ่มเล่น</a></div>
+    <a class="btn btn-primary btn-icon" href="host.html" title="เปิดห้องเกม" aria-label="เปิดห้องเกม">▶</a>
+  </div>
+</nav>
+
+<!-- 3. MANIFESTO -->
+<section class="manifesto sec-gap center" id="overview">
+  <div class="narrow">
+    <span class="label">ANSWER · RELEASE · CONQUER</span>
+    <h2 class="display sliced" style="margin-top:22px"><span>ความรู้คือกองทัพ</span><br><span>ห้องเรียนคือสนามรบ</span></h2>
+    <p>นักเรียนทั้งห้องแบ่งเป็น 2–4 สี ตอบคำถามบนมือถือ ทุกคำตอบที่ถูกจะชาร์จพลัง ครบ 3 ข้อปล่อยนักรบลงกระดานบนจอครู ใครยึดและล็อกพื้นที่ได้มากที่สุดเมื่อหมดเวลา ชนะ</p>
+  </div>
+</section>
+
+<!-- 4. MEDIA FRAME — เกมจำลองพร้อมป้ายชื่อและคัตอินสกิล -->
+<section>
+  <div class="wrap">
+    <div class="media" id="media"><div id="media-stage"></div><span class="tag tag-glass badge-live">LIVE SIMULATION</span></div>
+  </div>
+</section>
+
+<!-- 5. CAPABILITIES -->
+<section class="sec-gap" id="capabilities">
+  <div class="wrap">
+    <div class="tabs" role="tablist">
+      <button class="tabbtn on" data-tab="0" role="tab">Answer</button>
+      <button class="tabbtn" data-tab="1" role="tab">Skill</button>
+      <button class="tabbtn" data-tab="2" role="tab">Team</button>
+    </div>
+    <div class="tabtext" id="tabtext"></div>
+  </div>
+</section>
+
+<!-- 6. CAROUSEL — หน้าจอจำลอง -->
+<section>
+  <div class="carousel wrap" style="padding:0">
+    <div class="car-frame" id="car">
+      <div class="slide on" data-i="0">
+        <div class="mock mock-lobby">
+          <div class="mock-qr"><span class="mlabel" style="color:#5f6368">Scan to join</span><canvas class="qrfake" id="qrfake" width="29" height="29"></canvas><div class="code">482 915</div></div>
+          <div style="display:grid;align-content:start;gap:1.6em">
+            <div class="mbar"><span class="mlabel">Step 02 — Lobby</span></div>
+            <div style="display:flex;align-items:flex-end;gap:1em"><span class="count">32</span><span class="mlabel">players</span></div>
+            <div class="chips"><span>ฟ้า</span><span>บอส</span><span>มายด์</span><span>ต้น</span><span>แพรว</span><span>กัปตัน</span><span>ข้าวหอม</span><span>ปลื้ม</span><span>ภูมิ</span><span>น้ำใส</span><span>แบงค์</span><span>มิว</span><span>โอ๊ต</span><span>ใบเตย</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="slide" data-i="1">
+        <div class="mock mock-phones">
+          <div class="phone"><span class="mlabel">Question</span><div class="qtxt">แม่น้ำสายใดยาวที่สุดในทวีปแอฟริกา</div><div class="ch"><i>A</i>คองโก</div><div class="ch ok"><i>B</i>ไนล์</div><div class="ch"><i>C</i>ไนเจอร์</div><div class="ch"><i>D</i>แซมเบซี</div><div class="pips"><b></b><b></b><b class="off"></b></div></div>
+          <div class="phone"><span class="mlabel">Charged</span><canvas id="mock-ph-art"></canvas><div class="qtxt" style="text-align:center">พร้อมปล่อย!</div><div class="pips"><b></b><b></b><b></b></div><div class="rel">Release ×1</div></div>
+          <div class="phone"><span class="mlabel">Your team</span><canvas id="mock-ph-art2"></canvas><div class="qtxt" style="font-size:1.8em;font-weight:900">ทีมมาเจนตา</div><div class="mlabel">Skill · ฝูงแตกตัว</div></div>
+        </div>
+      </div>
+      <div class="slide" data-i="2">
+        <div class="mock mock-award">
+          <div class="award"><div class="art">⚡</div><div class="body"><span class="tag tag-solid" style="width:max-content">AWARD 1/9</span><b class="display" style="font-size:1.6em">สายฟ้าแลบ</b><div class="pn">ข้าวหอม</div><div class="muted">ตอบถูกเร็วที่สุดโดยเฉลี่ย · 4.2 วิ/ข้อ</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="car-foot"><span class="cap">ภาพหน้าจอจำลอง</span><div class="dots" id="dots"><button class="on" aria-label="สไลด์ 1"></button><button aria-label="สไลด์ 2"></button><button aria-label="สไลด์ 3"></button></div><span class="sp"></span></div>
+  </div>
+</section>
+
+<!-- 7. DISCOVER -->
+<section class="sec-gap center" id="discover" style="padding-bottom:110px">
+  <a class="btn btn-primary" href="#discover">Discover</a>
+  <div style="margin-top:34px"><span class="label" style="color:#fff">MEET THE CREW</span></div>
+  <p style="margin:12px 0 0;color:#d5d7da;font-size:1.05rem">รู้จักนักรบ 4 สี สกิลพิเศษ โบนัส และรางวัลท้ายเกม</p>
+  <div class="gallery" id="gallery"></div>
+</section>
+
+<!-- 8. ACCESS -->
+<section class="sec-gap center" id="access" style="padding-top:40px">
+  <a class="btn btn-primary btn-lg" href="host.html">Start a room</a>
+  <p class="legal">ใช้ฟรีในห้องเรียน · ต้องเชื่อมต่ออินเทอร์เน็ต · ครูเปิดบนคอมพิวเตอร์/โปรเจกเตอร์ นักเรียนเข้าด้วยมือถือ 2–40 คน<br>คลังคำถามเก็บไว้ในเบราว์เซอร์ของเครื่องครู ส่งออกเป็นไฟล์ CSV สำรองได้</p>
+  <div class="pair"><a class="btn btn-primary btn-th" href="play.html">นักเรียน: เข้าร่วมห้อง</a><a class="btn btn-ghost btn-th" href="bank.html">คลังคำถาม</a></div>
+</section>
+
+<!-- 9. FOOTER -->
+<footer id="more">
+  <div class="wrap foot-row">
+    <span class="lbl">เกมอื่นสำหรับห้องเรียน</span>
+    <a href="https://sirawatjan-svg.github.io/quizjoy/">Quizjoy</a>
+    <a href="https://sirawatjan-svg.github.io/dhamma-boss-game/">นักธรรมปราบกิเลส</a>
+    <a href="https://sirawatjan-svg.github.io/dhamma-fishing-game/">นักธรรมตกปลา</a>
+    <a href="https://sirawatjan-svg.github.io/ayutthaya-night-game/">ค่ำคืนว้าวุ่นในเมืองอยุธยา</a>
+  </div>
+  <div class="giant sliced">COLOR WAR</div>
+  <div class="wrap foot-bottom">
+    <a class="logo" href="#top" style="font:800 1rem/1 var(--display);letter-spacing:0;text-transform:none;color:#fff"><span class="mark"><i style="background:var(--c0)"></i><i style="background:var(--c1)"></i><i style="background:var(--c2)"></i><i style="background:var(--c3)"></i></span>สงครามสี</a>
+    <span class="sp"></span>
+    <a href="#overview">About</a><a href="#capabilities">How to play</a><a href="host.html">Teacher</a><a href="play.html">Player</a><a href="bank.html">Question bank</a>
+  </div>
+</footer>
+
+<script src="js/sfx.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/art.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/landing.js"></script>
+</body>
+</html>
